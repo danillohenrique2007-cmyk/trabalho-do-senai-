@@ -1,181 +1,419 @@
-(() => {
-  "use strict";
+```javascript
+document.addEventListener("DOMContentLoaded", () => {
+    "use strict";
 
-  const menuButton = document.getElementById("menuButton");
-  const mainNav = document.getElementById("mainNav");
-  const progress = document.getElementById("scrollProgress");
+    /* =========================================
+       MENU MOBILE
+    ========================================= */
 
-  const navLinks = [
-    ...document.querySelectorAll(".main-nav a")
-  ];
+    const menuButton = document.querySelector(".menu-button");
+    const navigation = document.querySelector(".main-nav");
 
-  const sections = [
-    ...document.querySelectorAll("main section[id]")
-  ];
+    if (menuButton && navigation) {
+        menuButton.addEventListener("click", () => {
+            navigation.classList.toggle("active");
 
-  const revealElements = document.querySelectorAll(".reveal");
+            const expanded =
+                menuButton.getAttribute("aria-expanded") === "true";
 
-  // ==========================================
-  // MENU MOBILE
-  // ==========================================
-
-  function toggleMenu() {
-    const isOpen = mainNav.classList.toggle("open");
-
-    menuButton.setAttribute(
-      "aria-expanded",
-      String(isOpen)
-    );
-  }
-
-  if (menuButton) {
-    menuButton.addEventListener(
-      "click",
-      toggleMenu
-    );
-  }
-
-  // Fecha o menu quando um link é selecionado
-  navLinks.forEach((link) => {
-    link.addEventListener("click", () => {
-
-      mainNav.classList.remove("open");
-
-      menuButton?.setAttribute(
-        "aria-expanded",
-        "false"
-      );
-
-    });
-  });
-
-
-  // ==========================================
-  // BARRA DE PROGRESSO
-  // ==========================================
-
-  function updateScrollProgress() {
-
-    const scrollTop = window.scrollY;
-
-    const documentHeight =
-      document.documentElement.scrollHeight -
-      window.innerHeight;
-
-    const percentage =
-      documentHeight > 0
-        ? (scrollTop / documentHeight) * 100
-        : 0;
-
-    if (progress) {
-
-      progress.style.width =
-        `${percentage}%`;
-
-    }
-  }
-
-
-  // ==========================================
-  // LINK ATIVO DO MENU
-  // ==========================================
-
-  function updateActiveLink() {
-
-    const marker =
-      window.scrollY + 150;
-
-    let current =
-      "inicio";
-
-    sections.forEach((section) => {
-
-      if (marker >= section.offsetTop) {
-
-        current =
-          section.id;
-
-      }
-
-    });
-
-    navLinks.forEach((link) => {
-
-      link.classList.toggle(
-        "active",
-        link.getAttribute("href") ===
-          `#${current}`
-      );
-
-    });
-  }
-
-
-  // ==========================================
-  // EVENTO DE ROLAGEM
-  // ==========================================
-
-  window.addEventListener(
-    "scroll",
-    () => {
-
-      updateScrollProgress();
-      updateActiveLink();
-
-    },
-    {
-      passive: true
-    }
-  );
-
-
-  // ==========================================
-  // ANIMAÇÕES AO ROLAR A PÁGINA
-  // ==========================================
-
-  const observer =
-    new IntersectionObserver(
-      (entries) => {
-
-        entries.forEach((entry) => {
-
-          if (entry.isIntersecting) {
-
-            entry.target.classList.add(
-              "visible"
+            menuButton.setAttribute(
+                "aria-expanded",
+                String(!expanded)
             );
-
-            observer.unobserve(
-              entry.target
-            );
-
-          }
-
         });
 
-      },
-      {
-        threshold: 0.12,
+        navigation.querySelectorAll("a").forEach((link) => {
+            link.addEventListener("click", () => {
+                navigation.classList.remove("active");
 
-        rootMargin:
-          "0px 0px -40px 0px"
-      }
+                menuButton.setAttribute(
+                    "aria-expanded",
+                    "false"
+                );
+            });
+        });
+    }
+
+
+    /* =========================================
+       BARRA DE PROGRESSO
+    ========================================= */
+
+    const progressBar =
+        document.querySelector(".scroll-progress");
+
+    function updateProgressBar() {
+        if (!progressBar) {
+            return;
+        }
+
+        const scrollTop = window.scrollY;
+
+        const documentHeight =
+            document.documentElement.scrollHeight -
+            window.innerHeight;
+
+        if (documentHeight <= 0) {
+            progressBar.style.width = "0%";
+            return;
+        }
+
+        const progress =
+            (scrollTop / documentHeight) * 100;
+
+        progressBar.style.width =
+            `${Math.min(progress, 100)}%`;
+    }
+
+
+    /* =========================================
+       LINK ATIVO DO MENU
+    ========================================= */
+
+    const sections =
+        document.querySelectorAll("section[id]");
+
+    const navigationLinks =
+        document.querySelectorAll(".main-nav a");
+
+    function updateActiveNavigation() {
+        let currentSection = "";
+
+        const position =
+            window.scrollY + 180;
+
+        sections.forEach((section) => {
+            const sectionTop =
+                section.offsetTop;
+
+            const sectionHeight =
+                section.offsetHeight;
+
+            if (
+                position >= sectionTop &&
+                position < sectionTop + sectionHeight
+            ) {
+                currentSection =
+                    section.getAttribute("id");
+            }
+        });
+
+        navigationLinks.forEach((link) => {
+            link.classList.remove("active");
+
+            const href =
+                link.getAttribute("href");
+
+            if (
+                href === `#${currentSection}`
+            ) {
+                link.classList.add("active");
+            }
+        });
+    }
+
+
+    /* =========================================
+       ANIMAÇÕES AO ROLAR
+    ========================================= */
+
+    const revealElements =
+        document.querySelectorAll(
+            ".reveal, .fade-up, .animate-on-scroll"
+        );
+
+    if ("IntersectionObserver" in window) {
+        const revealObserver =
+            new IntersectionObserver(
+                (entries, observer) => {
+
+                    entries.forEach((entry) => {
+
+                        if (
+                            entry.isIntersecting
+                        ) {
+                            entry.target.classList.add(
+                                "visible"
+                            );
+
+                            observer.unobserve(
+                                entry.target
+                            );
+                        }
+                    });
+
+                },
+                {
+                    threshold: 0.12
+                }
+            );
+
+        revealElements.forEach((element) => {
+            revealObserver.observe(element);
+        });
+
+    } else {
+
+        revealElements.forEach((element) => {
+            element.classList.add("visible");
+        });
+    }
+
+
+    /* =========================================
+       CONTADORES ANIMADOS
+    ========================================= */
+
+    const counters =
+        document.querySelectorAll(
+            "[data-counter]"
+        );
+
+    function animateCounter(element) {
+
+        if (
+            element.dataset.animated === "true"
+        ) {
+            return;
+        }
+
+        element.dataset.animated =
+            "true";
+
+        const target =
+            Number(
+                element.dataset.counter
+            );
+
+        if (
+            Number.isNaN(target)
+        ) {
+            return;
+        }
+
+        const duration = 1600;
+
+        const startTime =
+            performance.now();
+
+        function updateCounter(currentTime) {
+
+            const elapsed =
+                currentTime - startTime;
+
+            const progress =
+                Math.min(
+                    elapsed / duration,
+                    1
+                );
+
+            const eased =
+                1 -
+                Math.pow(
+                    1 - progress,
+                    3
+                );
+
+            const currentValue =
+                Math.floor(
+                    eased * target
+                );
+
+            element.textContent =
+                currentValue;
+
+            if (progress < 1) {
+                requestAnimationFrame(
+                    updateCounter
+                );
+            } else {
+                element.textContent =
+                    target;
+            }
+        }
+
+        requestAnimationFrame(
+            updateCounter
+        );
+    }
+
+
+    if (
+        counters.length > 0 &&
+        "IntersectionObserver" in window
+    ) {
+
+        const counterObserver =
+            new IntersectionObserver(
+                (entries, observer) => {
+
+                    entries.forEach((entry) => {
+
+                        if (
+                            entry.isIntersecting
+                        ) {
+
+                            animateCounter(
+                                entry.target
+                            );
+
+                            observer.unobserve(
+                                entry.target
+                            );
+                        }
+                    });
+
+                },
+                {
+                    threshold: 0.5
+                }
+            );
+
+        counters.forEach((counter) => {
+            counterObserver.observe(counter);
+        });
+
+    } else {
+
+        counters.forEach((counter) => {
+            animateCounter(counter);
+        });
+    }
+
+
+    /* =========================================
+       CARDS INTERATIVOS
+    ========================================= */
+
+    const interactiveCards =
+        document.querySelectorAll(
+            ".interactive-card"
+        );
+
+    interactiveCards.forEach((card) => {
+
+        card.addEventListener(
+            "mouseenter",
+            () => {
+                card.classList.add("hovered");
+            }
+        );
+
+        card.addEventListener(
+            "mouseleave",
+            () => {
+                card.classList.remove("hovered");
+            }
+        );
+    });
+
+
+    /* =========================================
+       CURIOSIDADES
+    ========================================= */
+
+    const facts = [
+        "A inteligência artificial é utilizada em sistemas de reconhecimento, análise de dados e automação.",
+        "Sistemas de IA podem analisar grandes volumes de informações em pouco tempo.",
+        "O desenvolvimento de sistemas autônomos levanta importantes questões sobre responsabilidade humana.",
+        "A utilização de inteligência artificial no setor militar envolve debates sobre segurança e regulamentação.",
+        "O avanço tecnológico pode trazer benefícios, mas também cria novos desafios para governos e sociedade."
+    ];
+
+    const factText =
+        document.querySelector(
+            ".fact-text"
+        );
+
+    const factDots =
+        document.querySelectorAll(
+            ".fact-dot"
+        );
+
+    let currentFact = 0;
+
+    function showFact(index) {
+
+        if (!factText) {
+            return;
+        }
+
+        currentFact = index;
+
+        factText.classList.add(
+            "fact-changing"
+        );
+
+        setTimeout(() => {
+
+            factText.textContent =
+                facts[currentFact];
+
+            factText.classList.remove(
+                "fact-changing"
+            );
+
+        }, 180);
+
+        factDots.forEach(
+            (dot, dotIndex) => {
+
+                dot.classList.toggle(
+                    "active",
+                    dotIndex === currentFact
+                );
+            }
+        );
+    }
+
+    factDots.forEach(
+        (dot, index) => {
+
+            dot.addEventListener(
+                "click",
+                () => {
+                    showFact(index);
+                }
+            );
+        }
     );
 
+    if (factText) {
 
-  revealElements.forEach((element) => {
+        showFact(0);
 
-    observer.observe(element);
+        setInterval(() => {
 
-  });
+            const next =
+                (currentFact + 1) %
+                facts.length;
+
+            showFact(next);
+
+        }, 6000);
+    }
 
 
-  // ==========================================
-  // INICIALIZAÇÃO
-  // ==========================================
+    /* =========================================
+       EFEITO PARALLAX DO HERO
+    ========================================= */
 
-  updateScrollProgress();
+    const hero =
+        document.querySelector(".hero");
 
-  updateActiveLink();
+    const heroContent =
+        document.querySelector(
+            ".hero-content"
+        );
 
-})();
+    if (hero && heroContent) {
+
+        window.addEventListener(
+            "scroll",
+            () => {
+
+                const scroll =
+                    window.scrollY;
+
+                if (
+```
